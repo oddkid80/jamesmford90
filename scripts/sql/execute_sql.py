@@ -72,12 +72,31 @@ class sql_executor():
         if parameters != None:
             sql_statement = common.param_query(sql_statement,parameters,param_identifier=self.param_identifier)
         try:
+            logging.info(f'Executing sql statement: {sql_statement}')
             self.cursor.execute(sql_statement)
             try:
                 rows_affected = self.cursor.rowcount
             except:
                 rows_affected = None
-            #print(rows_affected)
+            
+            if sql_statement.strip().lower().startswith('insert into'):
+                logging.info(f'Insert statement succeeded. Rows affected: {rows_affected}')
+                
+            if sql_statement.strip().lower().startswith('delete from'):
+                logging.info(f'Delete statement succeeded. Rows affected: {rows_affected}')
+                
+            if sql_statement.strip().lower().startswith('create'):
+                logging.info('Create statement succeeded.')
+            
+            if sql_statement.strip().lower().startswith('drop table'):
+                logging.info('Drop table statement succeeded.')
+                
+            if sql_statement.strip().lower().startswith('truncate'):
+                logging.info('Truncate statement succeeded.')
+                
+            if sql_statement.strip().lower().startswith('alter'):
+                logging.info('Alter statement succeeded.')
+                    
         except Exception as ex:
             raise ex
         
@@ -114,5 +133,3 @@ if __name__ == '__main__':
     
     executor = sql_executor(connection_type=connection_type,config_section=config_section)
     executor.execute_sql_file(file_name=file_name,parameters=parameters)
-    
-    
