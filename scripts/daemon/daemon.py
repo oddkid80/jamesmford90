@@ -85,7 +85,7 @@ if __name__ == '__main__':
     daemon = background_daemon()
     
     #daemon.start_daemon()
-    #daemon._find_procs()
+    #print(daemon._find_procs())
     #daemon._kill_daemon()
     
     

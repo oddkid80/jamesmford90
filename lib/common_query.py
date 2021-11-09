@@ -95,6 +95,24 @@ class common_query():
         return query_list
 
     def param_query(query,parameters,param_identifier=':'):
+        """
+        Parameterizes query based on identifier. Useful for SQL languages without inbuilt/dynamic variables.
+        
+        Pass dictionary with variables to be identified/replaced, will scan for the identifier (default is ':'), then
+            will replace with the corresponding value in the dictionary.
+            
+        Ex:
+            query = select * from schema.table where value = ':replace'
+            
+            dict = {'replace':'new value'}
+            
+            param_query(query,dict,param_identifier=':')
+            
+            results in 'select * from schema.table where value = 'new value''
+            
+        If you need a value between quotes, you must handle that either in the dictionary or the query itself prior to
+            paramaterizing the query.
+        """
 
         query_to_modify = query[:]
 
