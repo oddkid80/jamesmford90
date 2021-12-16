@@ -2,7 +2,7 @@ from common import common
 from pymongo import MongoClient
 import logging
 
-class mongo_common():
+class common_mongo():
     def __init__(self,mongo_connection_string,mongo_create=False):
         self.mongo_connection_string = mongo_connection_string
         self.mongo_create = mongo_create      
@@ -52,12 +52,23 @@ class mongo_common():
                 cursor.insert_one(list_of_dicts)
             else:
                 cursor.insert_many(list_of_dicts)
-            logging.info('Records insert into mongodb!')
+            logging.info('Records inserted into mongodb!')
         except Exception as ex:
             logging.error(f'Insert failed with error: {ex}')
     
     def update():
         pass
     
-    def delete():
-        pass
+    def delete(self,db,collection,query={"0":1},delete_many=False):
+        cursor = self._define_cursor(db,collection)
+        if query == {"0":1}:
+            logging.warning(f"No query specified, will not delete any records. If you wish to delete all records, specify query appropriately.")
+        logging.info(f"Deleting from mongo, {db}.{collection}, with query: {query}")
+        try:
+            if delete_many:
+                mongo_del = cursor.delete_many(query)
+            else:
+                mongo_del = cursor.delete_one(query)
+            logging.info(f'Records deleted from mongodb! Count of records deleted: {mongo_del.deleted_count}')
+        except Exception as ex:
+            logging.error(f'Delete failed with error: {ex}')
