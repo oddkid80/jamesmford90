@@ -21,7 +21,8 @@ class common_mongo():
                 list_of_colls = [colls['name'] for colls in db.list_collections()]
                 if collection not in list_of_colls:
                     raise Exception(f"Collection '{collection}' does not exist in mongodb. Either set mongo_create = True, or pick one of existing collections. List of collections: [{', '.join(list_of_colls)}]")
-            
+
+                cursor = db[f'{collection}']
             else:
                 db = mongo_conn[f'{db}']
                 cursor = db[f'{collection}']
