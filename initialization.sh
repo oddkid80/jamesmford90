@@ -53,6 +53,8 @@ if 'linux' in platform:
 
     subprocess.run('source ~/.bashrc',shell=True)
     subprocess.run('sudo apt-get install -y unixodbc-dev',shell=True)
+    
+    subprocess.run('sudo apt-get install python3-tk')
 
 
 import subprocess
@@ -66,6 +68,8 @@ packages = [
     ,['pyodbc','na']
     ,['odo','na']
     ,['sqlalchemy','na']
+    ,['croniter','na']
+    ,['pymongo[srv]','na']
 ]
 for package in packages:
     if package[1] == 'na':
