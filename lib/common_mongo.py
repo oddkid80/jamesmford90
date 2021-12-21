@@ -2,74 +2,104 @@ from common import common
 from pymongo import MongoClient
 import logging
 
-class common_mongo():
-    def __init__(self,mongo_connection_string,mongo_create=False):
-        self.mongo_connection_string = mongo_connection_string
-        self.mongo_create = mongo_create      
-    
-    def _define_cursor(self,db,collection):
+class mongo_cursor():
+    def __init__(self,mongo_connection_string,db,collection,**kwargs):
+        #creating mongo connection with passed string
         try:
-            logging.info('Attempting to create mongo cursor.')
-            mongo_conn = MongoClient(self.mongo_connection_string)
+            logging.info('Attempting to establish mongo connection.')
+            self.mongo_conn = MongoClient(mongo_connection_string)
+        except Exception as ex:
+            logging.error(f'Mongo connection failed, with error: {ex}')
+            raise ex
+        logging.info('Mongo connection created!')
+        
+        #pulling args and assigning
+        self.mongo_create = kwargs.get('mongo_create',False)
 
+        #pointing cursor to db and collection
+        self._point_cursor(db,collection)
+    
+    def __enter__(self):
+        return self
+    def __exit__(self,exc_type,exc_value,traceback):
+        del self
+    
+    def _point_cursor(self,db,collection):
+        logging.info('Attempting to create mongo cursor.')
+        try:
             if not self.mongo_create:
-                list_of_dbs = [dbs['name'] for dbs in mongo_conn.list_databases()]
+                list_of_dbs = [dbs['name'] for dbs in self.mongo_conn.list_databases()]
                 if db not in list_of_dbs:
                     raise Exception(f"Database '{db}' does not exist in the mongodb. Either set mongo_create = True, or pick one of existing dbs. List of dbs: [{', '.join(list_of_dbs)}]")        
             
-                db = mongo_conn[f'{db}']
+                db = self.mongo_conn[f'{db}']
                 list_of_colls = [colls['name'] for colls in db.list_collections()]
                 if collection not in list_of_colls:
                     raise Exception(f"Collection '{collection}' does not exist in mongodb. Either set mongo_create = True, or pick one of existing collections. List of collections: [{', '.join(list_of_colls)}]")
 
                 cursor = db[f'{collection}']
             else:
-                db = mongo_conn[f'{db}']
+                db = self.mongo_conn[f'{db}']
                 cursor = db[f'{collection}']
+            self.mongo_cursor = cursor
             logging.info('Mongo cursor created.')
-            return cursor
         except Exception as ex:
             logging.error(f'Failed to create mongo cursor. Error: {ex}')
             raise ex
 
-    def fetch(self,db,collection,query={},chunk=None):
-        cursor = self._define_cursor(db,collection)        
+    def fetch(self,query={},chunk=None):             
         try:
             logging.info(f"Fetching from mongo, {db}.{collection}, with query: {query}")
             if chunk:
-                return cursor.find(query).batch_size(chunk)
+                return self.mongo_cursor.find(query).batch_size(chunk)
             else:
-                return cursor.find(query)
+                return self.mongo_cursor.find(query)
         except Exception as ex:
             logging.error(f'Mongo fetch failed, error: {ex}')
         
-    def insert(self,db,collection,list_of_dicts):
-        cursor = self._define_cursor(db,collection)
+    def insert(self,list_of_dicts):
         logging.info('Inserting records into mongodb.')
         try:
             if len(list_of_dicts) == 1:
-                cursor.insert_one(list_of_dicts[0])
+                self.mongo_cursor.insert_one(list_of_dicts[0])
+                recs_inserted = 1
             elif isinstance(list_of_dicts,dict):
-                cursor.insert_one(list_of_dicts)
+                self.mongo_cursor.insert_one(list_of_dicts)
+                recs_inserted = 1
             else:
-                cursor.insert_many(list_of_dicts)
-            logging.info('Records inserted into mongodb!')
+                insert = self.mongo_cursor.insert_many(list_of_dicts)
+                recs_inserted = len(insert.inserted_ids)
+            logging.info(f'Records inserted into mongodb! Count of records inserted: {recs_inserted}')
         except Exception as ex:
             logging.error(f'Insert failed with error: {ex}')
     
-    def update():
-        pass
-    
-    def delete(self,db,collection,query={"0":1},delete_many=False):
-        cursor = self._define_cursor(db,collection)
+    def update(self,query={"0":1},update_query={},update_many=False,**kwargs):
         if query == {"0":1}:
-            logging.warning(f"No query specified, will not delete any records. If you wish to delete all records, specify query appropriately.")
+            logging.warning(f"No query specified, will not update any records. If you wish to update records, specify query. If you wish to add new field, specify empty query.")
+        
+        try:
+            if update_many:
+                updated = self.mongo_cursor.update_many(query,update_query,**kwargs)
+                updated_recs = updated.modified_count
+            else:
+                self.mongo_cursor.update_one(query,update_query,**kwargs)
+                updated_recs = 1
+            logging.info(f'Records updated! Count of records updated: {updated_recs}')           
+
+        except Exception as ex:
+            logging.error(f'Update failed with error: {ex}')
+            raise ex
+    
+    def delete(self,query={"0":1},delete_many=False):
+        if query == {"0":1}:
+            logging.warning(f"No query specified, will not delete any records. If you wish to delete records, specify query.")
         logging.info(f"Deleting from mongo, {db}.{collection}, with query: {query}")
         try:
             if delete_many:
-                mongo_del = cursor.delete_many(query)
+                mongo_del = self.mongo_cursor.delete_many(query)
             else:
-                mongo_del = cursor.delete_one(query)
+                mongo_del = self.mongo_cursor.delete_one(query)
             logging.info(f'Records deleted from mongodb! Count of records deleted: {mongo_del.deleted_count}')
         except Exception as ex:
             logging.error(f'Delete failed with error: {ex}')
+            raise ex
