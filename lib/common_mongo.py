@@ -25,7 +25,9 @@ class mongo_cursor():
         del self
     
     def _point_cursor(self,db,collection):
-        logging.info('Attempting to create mongo cursor.')
+        self.db = db
+        self.collection = collection
+        logging.info(f'Attempting to create mongo cursor pointing to {self.db}.{self.collection}.')
         try:
             if not self.mongo_create:
                 list_of_dbs = [dbs['name'] for dbs in self.mongo_conn.list_databases()]
@@ -42,14 +44,14 @@ class mongo_cursor():
                 db = self.mongo_conn[f'{db}']
                 cursor = db[f'{collection}']
             self.mongo_cursor = cursor
-            logging.info('Mongo cursor created.')
+            logging.info('Mongo cursor created!')
         except Exception as ex:
             logging.error(f'Failed to create mongo cursor. Error: {ex}')
             raise ex
 
     def fetch(self,query={},chunk=None):             
         try:
-            logging.info(f"Fetching from mongo, {db}.{collection}, with query: {query}")
+            logging.info(f"Fetching from mongo, {self.db}.{self.collection}, with query: {query}")
             if chunk:
                 return self.mongo_cursor.find(query).batch_size(chunk)
             else:
@@ -58,7 +60,7 @@ class mongo_cursor():
             logging.error(f'Mongo fetch failed, error: {ex}')
         
     def insert(self,list_of_dicts):
-        logging.info('Inserting records into mongodb.')
+        logging.info(f'Inserting records into mongodb, {self.db}.{self.collection}.')
         try:
             if len(list_of_dicts) == 1:
                 self.mongo_cursor.insert_one(list_of_dicts[0])
@@ -76,7 +78,7 @@ class mongo_cursor():
     def update(self,query={"0":1},update_query={},update_many=False,**kwargs):
         if query == {"0":1}:
             logging.warning(f"No query specified, will not update any records. If you wish to update records, specify query. If you wish to add new field, specify empty query.")
-        
+        logging.info(f"Updating mongo, {self.db}.{self.collection}, with filter: {query}, update_query: {update_query}")
         try:
             if update_many:
                 updated = self.mongo_cursor.update_many(query,update_query,**kwargs)
@@ -93,7 +95,7 @@ class mongo_cursor():
     def delete(self,query={"0":1},delete_many=False):
         if query == {"0":1}:
             logging.warning(f"No query specified, will not delete any records. If you wish to delete records, specify query.")
-        logging.info(f"Deleting from mongo, {db}.{collection}, with query: {query}")
+        logging.info(f"Deleting from mongo, {self.db}.{self.collection}, with query: {query}")
         try:
             if delete_many:
                 mongo_del = self.mongo_cursor.delete_many(query)
