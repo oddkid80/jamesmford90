@@ -13,7 +13,7 @@ charge_file = file_location+'/charge.txt'
 member_file = file_location+'/member.txt'
 
 #mysql -- mysql too slow on transactions/creating tables forgoing loading to mysql
-mysql_connection = common.config_mysql(section='mysql,dbadmin')
+mysql_connection = common.fetch_config(section='mysql,dbadmin')
 mysql_conn = mysql.connect(**mysql_connection, allow_local_infile=True)
 mysql_cursor = mysql_conn.cursor()
 
@@ -64,7 +64,7 @@ for chunk in pd.read_csv(charge_file, delimiter='|', chunksize=50000, quoting=cs
 mysql_conn.close()
 
 #postgres
-postgres_connection = common.config_postgres(section='postgres,postgres,sandbox')
+postgres_connection = common.fetch_config(section='postgres,postgres,sandbox',format_type='postgres')
 with psycopg2.connect(postgres_connection) as con:
     cursor = con.cursor()
     create_member = """
@@ -123,7 +123,7 @@ create table credit.dbo.charge
 ;
 """
 
-msql_connection = common.config_sql_server(section='mssql,dbadmin')
+msql_connection = common.fetch_config(section='mssql,dbadmin',format_type='sql_server')
 
 with pyodbc.connect(msql_connection) as con:
     cursor = con.cursor()

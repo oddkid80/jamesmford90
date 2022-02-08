@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import os
 from sys import platform
 
-def fetch_config(section=None,config_file=None):
+def fetch_config(section=None,subsection=None,config_file=None):
     """
     Fetches config in standard dictionary format
     """
@@ -25,53 +25,54 @@ def fetch_config(section=None,config_file=None):
     else:
         raise Exception(f"{section} not found in the {filename} file")
     
-    return config
+    if subsection:   
+        try:     
+            return config[subsection]
+        except:
+            raise Exception(f'{subsection} not found in config')
+    else:
+        return config
+
+def format_config(format_type,config):
+    """
+    Formats a config dict to required string format - available types are:
+        postgres
+        sql_server
+    """
+    if isinstance(config,dict):
+        if format_type == 'postgres':
+            string = ''
+            for i in config:
+                string+=' '+i+'='+config[i]
+            return string
+
+        if format_type == 'sql_server':            
+            import pyodbc
+            driver = pyodbc.drivers()[0]
+            if config['driver'] != driver:
+                config['driver'] = '{'+driver+'}'
+            del pyodbc
+
+            string = ''
+            for key in config:
+                if string == '':
+                    string+=key.replace('_',' ')+'='+config[key]
+                else:
+                    string+=';'+key.replace('_',' ')+'='+config[key]
+            return string
+        
+        else:
+            return config
+    
+    else:
+        return config
 
 
 class common_fetchconfig():    
 
     #define core config location
     config_location = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/.config/config.cfg'
-
-    def config_postgres(section=None,config_file=config_location):
-        """
-        Fetches postgres config - will use class level config location which is located in the main repo ~/.config/config.cfg file
-            or can be specified.
-        
-        Will then take the config and transform it into a standard postgres connection string
-        """
-        db = fetch_config(section=section,config_file=config_file)
-        
-        string = ''
-        for i in db:
-            string+=' '+i+'='+db[i]
-        return string
     
-    def config_sql_server(section=None,config_file=config_location):
-        """
-        Fetches SQL server config and puts it in string format
-        """        
-        db = fetch_config(section=section,config_file=config_file)
-
-        import pyodbc
-        driver = pyodbc.drivers()[0]
-        if db['driver'] != driver:
-            db['driver'] = '{'+driver+'}'
-        del pyodbc
-
-        connection_string = ''
-        for key in db:
-            if connection_string == '':
-                connection_string+=key.replace('_',' ')+'='+db[key]
-            else:
-                connection_string+=';'+key.replace('_',' ')+'='+db[key]
-
-        return connection_string
-    
-    def config_mysql(section=None,config_file=config_location):
-        """
-        Fetches mysql server config and returns it in dictionary format
-        """
-
-        return fetch_config(section=section,config_file=config_file)
-
+    def fetch_config(section=None,subsection=None,config_file=config_location,format_type=None):
+        config = fetch_config(section=section,subsection=subsection,config_file=config_file)
+        return format_config(format_type,config)

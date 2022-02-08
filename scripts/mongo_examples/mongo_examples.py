@@ -6,7 +6,7 @@ import datetime
 
 if __name__ == '__main__':
     mongo_string = common.fetch_config(section='mongo,localhost',subsection='connection_string')
-    pg_conn_info = common.config_postgres('postgres,postgres,sandbox,local')
+    pg_conn_info = common.fetch_config(section='postgres,postgres,sandbox,local',format_type='postgres')
     
     #defining mongo cursor
     mongo_worker = common_mongo.mongo_cursor(mongo_string,'sample_credit','member',mongo_create=True)

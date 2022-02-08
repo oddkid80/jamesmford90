@@ -14,14 +14,14 @@ executor = sql_executor()
 folder_location = os.path.dirname(os.path.abspath(__file__))
 
 #postgres
-postgres_connection = common.config_postgres(section='postgres,postgres,sandbox')
+postgres_connection = common.fetch_config(section='postgres,postgres,sandbox',format_type='postgres')
 con = psycopg2.connect(postgres_connection)
 executor.setup_connection_and_cursor(con)
 
 executor.execute_sql_file(folder_location+'/build_payments_postgres.sql')
 
 #mssql
-msql_connection = common.config_sql_server(section='mssql,dbadmin')
+msql_connection = common.fetch_config(section='mssql,dbadmin',format_type='sql_server')
 con = pyodbc.connect(msql_connection)
 executor.setup_connection_and_cursor(con)
 

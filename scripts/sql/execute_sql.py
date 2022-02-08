@@ -18,7 +18,7 @@ class sql_executor():
             
             #trying fetching config and creating connection
             try:
-                connection_info = common.config_postgres(section=config_section)              
+                connection_info = common.fetch_config(section=config_section,format_type='postgres')              
                 self.connection = connector.connect(connection_info)
                 self.cursor = self.connection.cursor()
             except Exception as ex:
@@ -36,7 +36,7 @@ class sql_executor():
             
             #trying fetching config and creation connection
             try:
-                connection_info = common.config_sql_server(section=config_section)
+                connection_info = common.fetch_config(section=config_section,format_type='sql_server')
                 self.connection = connector.connect(connection_info)
                 self.cursor = self.connection.cursor()
             except Exception as ex:
@@ -54,7 +54,7 @@ class sql_executor():
             
             #trying fetching config and creation connection
             try:
-                connection_info = common.config_mysql(section=config_section)
+                connection_info = common.fetch_config(section=config_section)
                 self.connection = connector.connect(**connection_info)
                 self.cursor = self.connection.cursor()
             except Exception as ex:
@@ -133,3 +133,5 @@ if __name__ == '__main__':
     
     executor = sql_executor(connection_type=connection_type,config_section=config_section)
     executor.execute_sql_file(file_name=file_name,parameters=parameters)
+    
+    
